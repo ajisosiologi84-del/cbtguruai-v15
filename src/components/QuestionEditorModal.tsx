@@ -29,7 +29,7 @@ interface QuestionEditorModalProps {
     poin?: number;
     id?: number;
     categoryOptions?: string[];
-    categoryStatements?: { id: string; statement: string; correctCategory: string }[];
+    categoryStatements?: { id: string; statement: string; correctCategory: string; image?: string }[];
   }) => void;
   onClose: () => void;
   showAlert: (msg: string) => void;
@@ -63,10 +63,12 @@ export const QuestionEditorModal: React.FC<QuestionEditorModalProps> = ({
   const [correctIndex, setCorrectIndex] = useState<number>(0);
   const [mcmaCorrectIndices, setMcmaCorrectIndices] = useState<number[]>([0]);
   const [categoryOptionsList, setCategoryOptionsList] = useState<string[]>(['Benar', 'Salah']);
-  const [categoryStatementsList, setCategoryStatementsList] = useState<{ id: string; statement: string; correctCategory: string }[]>([
+  const [categoryStatementsList, setCategoryStatementsList] = useState<{ id: string; statement: string; correctCategory: string; image?: string }[]>([
     { id: '1', statement: '', correctCategory: 'Benar' },
     { id: '2', statement: '', correctCategory: 'Salah' },
   ]);
+  const [statementUrlInputIdx, setStatementUrlInputIdx] = useState<number | null>(null);
+  const [statementUrlInputValue, setStatementUrlInputValue] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'editor' | 'preview'>('editor');
 
   // Ref for Question Textarea for cursor-accurate insertions
@@ -269,13 +271,22 @@ export const QuestionEditorModal: React.FC<QuestionEditorModalProps> = ({
       }
 
       if (editingQuestion.categoryStatements && editingQuestion.categoryStatements.length > 0) {
-        setCategoryStatementsList(editingQuestion.categoryStatements);
+        setCategoryStatementsList(
+          editingQuestion.categoryStatements.map((st, idx) => ({
+            id: st.id || String(idx + 1),
+            statement: st.statement,
+            correctCategory: st.correctCategory,
+            image: st.image || undefined,
+          }))
+        );
       } else {
         setCategoryStatementsList([
           { id: '1', statement: '', correctCategory: 'Benar' },
           { id: '2', statement: '', correctCategory: 'Salah' },
         ]);
       }
+      setStatementUrlInputIdx(null);
+      setStatementUrlInputValue('');
     } else {
       setQuestionText('');
       setExplanationText('');
@@ -331,6 +342,113 @@ export const QuestionEditorModal: React.FC<QuestionEditorModalProps> = ({
       return;
     }
     setCategoryStatementsList((prev) => prev.filter((_, i) => i !== index));
+    if (statementUrlInputIdx === index) {
+      setStatementUrlInputIdx(null);
+      setStatementUrlInputValue('');
+    }
+  };
+
+  const handleCategoryStatementImageUpload = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      showAlert('Format file harus berupa gambar (JPG, PNG, GIF, WEBP)!');
+      return;
+    }
+
+    if (file.size > 8 * 1024 * 1024) {
+      showAlert('Ukuran file gambar pernyataan terlalu besar (Maksimal 8 MB)!');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const rawResult = event.target?.result as string;
+      if (rawResult) {
+        const img = new Image();
+        img.onload = () => {
+          const maxDim = 800;
+          let width = img.width;
+          let height = img.height;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            const compressed = canvas.toDataURL('image/jpeg', 0.82);
+            setCategoryStatementsList((prev) => {
+              const updated = [...prev];
+              updated[index] = { ...updated[index], image: compressed };
+              return updated;
+            });
+          } else {
+            setCategoryStatementsList((prev) => {
+              const updated = [...prev];
+              updated[index] = { ...updated[index], image: rawResult };
+              return updated;
+            });
+          }
+          showAlert(`Gambar untuk Pernyataan #${index + 1} berhasil diunggah!`);
+        };
+        img.onerror = () => {
+          setCategoryStatementsList((prev) => {
+            const updated = [...prev];
+            updated[index] = { ...updated[index], image: rawResult };
+            return updated;
+          });
+          showAlert(`Gambar untuk Pernyataan #${index + 1} berhasil diunggah!`);
+        };
+        img.src = rawResult;
+      }
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const handleRemoveCategoryStatementImage = (index: number) => {
+    setCategoryStatementsList((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], image: undefined };
+      return updated;
+    });
+    showAlert(`Gambar untuk Pernyataan #${index + 1} dihapus.`);
+  };
+
+  const handleApplyCategoryStatementUrl = (index: number) => {
+    const trimmed = statementUrlInputValue.trim();
+    if (!trimmed) {
+      showAlert('Masukkan link/URL gambar yang valid!');
+      return;
+    }
+    setCategoryStatementsList((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], image: trimmed };
+      return updated;
+    });
+    setStatementUrlInputIdx(null);
+    setStatementUrlInputValue('');
+    showAlert(`URL Gambar untuk Pernyataan #${index + 1} berhasil disimpan!`);
+  };
+
+  const handleToggleStatementUrlInput = (index: number) => {
+    if (statementUrlInputIdx === index) {
+      setStatementUrlInputIdx(null);
+      setStatementUrlInputValue('');
+    } else {
+      setStatementUrlInputIdx(index);
+      setStatementUrlInputValue(categoryStatementsList[index]?.image || '');
+    }
   };
 
   const handleMultipleImagesUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -664,6 +782,7 @@ export const QuestionEditorModal: React.FC<QuestionEditorModalProps> = ({
           id: String(idx + 1),
           statement: st.statement.trim(),
           correctCategory: st.correctCategory,
+          image: st.image && st.image.trim() ? st.image.trim() : undefined,
         })),
       });
       return;
@@ -1251,52 +1370,138 @@ export const QuestionEditorModal: React.FC<QuestionEditorModalProps> = ({
                 {/* List Pernyataan & Kunci Jawaban */}
                 <div className="space-y-3">
                   {categoryStatementsList.map((st, idx) => (
-                    <div key={st.id || idx} className="bg-white p-3 rounded-xl border border-indigo-100 shadow-xs flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-                      <span className="font-extrabold text-xs text-indigo-800 bg-indigo-100 px-2.5 py-1 rounded-lg shrink-0">
-                        #{idx + 1}
-                      </span>
-                      <input
-                        type="text"
-                        value={st.statement}
-                        onChange={(e) => {
-                          const updated = [...categoryStatementsList];
-                          updated[idx].statement = e.target.value;
-                          setCategoryStatementsList(updated);
-                        }}
-                        placeholder={`Tuliskan teks pernyataan #${idx + 1}...`}
-                        className="flex-1 border-2 border-slate-200 rounded-xl p-2 text-xs font-semibold focus:border-indigo-500 focus:outline-none bg-white w-full"
-                      />
-                      <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
-                        <span className="text-[11px] font-bold text-slate-500">Kunci:</span>
-                        <div className="flex gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200">
-                          {categoryOptionsList.map((opt) => (
-                            <button
-                              key={opt}
-                              type="button"
-                              onClick={() => {
-                                const updated = [...categoryStatementsList];
-                                updated[idx].correctCategory = opt;
-                                setCategoryStatementsList(updated);
-                              }}
-                              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                                st.correctCategory === opt
-                                  ? 'bg-emerald-600 text-white shadow-xs'
-                                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
-                              }`}
-                            >
-                              {opt}
-                            </button>
-                          ))}
+                    <div key={st.id || idx} className="bg-white p-3.5 rounded-2xl border-2 border-indigo-100 shadow-2xs space-y-2.5">
+                      <div className="flex flex-col sm:flex-row gap-2.5 items-start sm:items-center">
+                        <span className="font-extrabold text-xs text-indigo-800 bg-indigo-100 px-2.5 py-1.5 rounded-xl shrink-0">
+                          #{idx + 1}
+                        </span>
+                        <input
+                          type="text"
+                          value={st.statement}
+                          onChange={(e) => {
+                            const updated = [...categoryStatementsList];
+                            updated[idx].statement = e.target.value;
+                            setCategoryStatementsList(updated);
+                          }}
+                          placeholder={`Tuliskan teks pernyataan #${idx + 1}...`}
+                          className="flex-1 border-2 border-slate-200 rounded-xl p-2 text-xs font-semibold focus:border-indigo-500 focus:outline-none bg-white w-full"
+                        />
+                        <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto flex-wrap">
+                          <span className="text-[11px] font-bold text-slate-500">Kunci:</span>
+                          <div className="flex gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+                            {categoryOptionsList.map((opt) => (
+                              <button
+                                key={opt}
+                                type="button"
+                                onClick={() => {
+                                  const updated = [...categoryStatementsList];
+                                  updated[idx].correctCategory = opt;
+                                  setCategoryStatementsList(updated);
+                                }}
+                                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                  st.correctCategory === opt
+                                    ? 'bg-emerald-600 text-white shadow-xs'
+                                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
+                                }`}
+                              >
+                                {opt}
+                              </button>
+                            ))}
+                          </div>
+
+                          {/* Tombol Sisipkan Gambar Pernyataan */}
+                          <label className="relative cursor-pointer inline-flex items-center gap-1.5 bg-gradient-to-r from-teal-600 to-indigo-600 hover:from-teal-700 hover:to-indigo-700 text-white text-xs font-black px-2.5 py-1.5 rounded-xl transition-all shadow-xs active:scale-95">
+                            <FileImage className="w-3.5 h-3.5 text-amber-300" />
+                            <span>Gambar</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => handleCategoryStatementImageUpload(idx, e)}
+                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            />
+                          </label>
+
+                          {/* Tombol URL Gambar */}
+                          <button
+                            type="button"
+                            onClick={() => handleToggleStatementUrlInput(idx)}
+                            className={`px-2 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer border ${
+                              statementUrlInputIdx === idx
+                                ? 'bg-indigo-600 text-white border-indigo-600'
+                                : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border-indigo-200'
+                            }`}
+                            title="Input Link URL Gambar"
+                          >
+                            <LinkIcon className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">URL</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveCategoryStatement(idx)}
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1.5 rounded-xl transition-colors cursor-pointer"
+                            title="Hapus Pernyataan"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveCategoryStatement(idx)}
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1.5 rounded-lg transition-colors cursor-pointer"
-                          title="Hapus Pernyataan"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
                       </div>
+
+                      {/* Input URL Gambar jika aktif */}
+                      {statementUrlInputIdx === idx && (
+                        <div className="flex gap-2 p-2 bg-indigo-50/70 border border-indigo-200 rounded-xl items-center animate-fade-in">
+                          <LinkIcon className="w-4 h-4 text-indigo-600 shrink-0 ml-1" />
+                          <input
+                            type="url"
+                            value={statementUrlInputValue}
+                            onChange={(e) => setStatementUrlInputValue(e.target.value)}
+                            placeholder="https://contoh.com/gambar-pernyataan.jpg"
+                            className="flex-1 bg-white border border-indigo-300 rounded-lg p-1.5 text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleApplyCategoryStatementUrl(idx)}
+                            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs transition-colors cursor-pointer shrink-0"
+                          >
+                            Terapkan
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setStatementUrlInputIdx(null)}
+                            className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer shrink-0"
+                          >
+                            Batal
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Preview Gambar Pernyataan jika ada */}
+                      {st.image && (
+                        <div className="ml-1 sm:ml-8 flex items-center gap-3 bg-indigo-50/70 p-2.5 rounded-xl border border-indigo-200">
+                          <img
+                            src={st.image}
+                            alt={`Gambar Pernyataan #${idx + 1}`}
+                            className="h-16 w-auto max-w-[140px] object-contain rounded-lg border border-indigo-200 bg-white p-0.5 shadow-2xs"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold text-indigo-950 flex items-center gap-1.5 truncate">
+                              <FileImage className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                              Gambar Pernyataan #{idx + 1}
+                            </p>
+                            <p className="text-[10px] text-indigo-600 font-medium mt-0.5">
+                              Tersimpan dan akan tampil pada tabel soal siswa
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveCategoryStatementImage(idx)}
+                            className="p-1.5 text-red-600 hover:bg-red-100 rounded-lg transition-colors cursor-pointer shrink-0"
+                            title="Hapus Gambar Pernyataan"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -1684,9 +1889,20 @@ export const QuestionEditorModal: React.FC<QuestionEditorModalProps> = ({
                     <tbody className="divide-y divide-slate-100 font-semibold text-slate-800">
                       {categoryStatementsList.map((st, idx) => (
                         <tr key={st.id || idx} className="hover:bg-slate-50 transition-colors">
-                          <td className="p-3 text-center font-bold text-slate-400">{idx + 1}</td>
-                          <td className="p-3 text-slate-900">{st.statement || '(Pernyataan belum diisi)'}</td>
-                          <td className="p-3 text-center">
+                          <td className="p-3 text-center font-bold text-slate-400 align-top">{idx + 1}</td>
+                          <td className="p-3 text-slate-900 align-top space-y-1.5">
+                            <div>{st.statement || '(Pernyataan belum diisi)'}</div>
+                            {st.image && (
+                              <div className="pt-1">
+                                <img
+                                  src={st.image}
+                                  alt={`Gambar Pernyataan #${idx + 1}`}
+                                  className="max-h-24 w-auto object-contain rounded-lg border border-slate-200 bg-white p-1 shadow-2xs"
+                                />
+                              </div>
+                            )}
+                          </td>
+                          <td className="p-3 text-center align-top">
                             <span className="inline-block bg-emerald-100 text-emerald-900 font-bold px-3 py-1 rounded-lg border border-emerald-300">
                               ✓ {st.correctCategory}
                             </span>

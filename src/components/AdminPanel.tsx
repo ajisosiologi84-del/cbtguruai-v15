@@ -1743,6 +1743,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           const rowKompetensi = getVal('Kompetensi', 'kompetensi', 'KD', 'Sub_Topik', 'sub_topik', 'Materi');
           const rowBentuk = (getVal('Bentuk Soal', 'Bentuk_Soal', 'bentuk_soal', 'BentukSoal') || 'Pilihan Ganda').toString().trim();
           const rowImg = getVal('Gambar', 'gambar', 'URL_Gambar', 'url_gambar', 'Image');
+          const imgSt1 = getVal('Gambar_Pernyataan_1', 'Gambar_1', 'Gambar_Opsi_A', 'Gambar_A', 'gambar_1');
+          const imgSt2 = getVal('Gambar_Pernyataan_2', 'Gambar_2', 'Gambar_Opsi_B', 'Gambar_B', 'gambar_2');
+          const imgSt3 = getVal('Gambar_Pernyataan_3', 'Gambar_3', 'Gambar_Opsi_C', 'Gambar_C', 'gambar_3');
+          const imgSt4 = getVal('Gambar_Pernyataan_4', 'Gambar_4', 'Gambar_Opsi_D', 'Gambar_D', 'gambar_4');
+          const imgSt5 = getVal('Gambar_Pernyataan_5', 'Gambar_5', 'Gambar_Opsi_E', 'Gambar_E', 'gambar_5');
+          const stmtImgs = [imgSt1, imgSt2, imgSt3, imgSt4, imgSt5];
           const rowPoin = getVal('Poin', 'poin', 'Point', 'point', 'Bobot', 'bobot', 'Nilai', 'nilai');
           const poinVal = rowPoin && !isNaN(Number(rowPoin)) && Number(rowPoin) > 0 ? Number(rowPoin) : 10;
 
@@ -1840,10 +1846,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               const categoryStatements = rawStatementsList.map((st, idx) => {
                 const stId = String(idx + 1);
                 const correctCat = keyMap[stId] || keyMap[String.fromCharCode(65 + idx)] || Object.values(keyMap)[idx] || categoryOptions[0];
+                const stImg = stmtImgs[idx] ? String(stmtImgs[idx]).trim() : undefined;
                 return {
                   id: stId,
                   statement: st,
                   correctCategory: correctCat,
+                  image: stImg || undefined,
                 };
               });
 
@@ -1882,11 +1890,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 bentukSoal: isMcma ? 'Pilihan Ganda Kompleks MCMA' : 'Pilihan Ganda',
                 poin: poinVal,
                 options: [
-                  { id: 'A', text: String(optA), isCorrect: keysArray.includes('A') },
-                  { id: 'B', text: String(optB), isCorrect: keysArray.includes('B') },
-                  { id: 'C', text: String(optC), isCorrect: keysArray.includes('C') },
-                  { id: 'D', text: String(optD || '-'), isCorrect: keysArray.includes('D') },
-                  { id: 'E', text: String(optE || '-'), isCorrect: keysArray.includes('E') },
+                  { id: 'A', text: String(optA), isCorrect: keysArray.includes('A'), image: imgSt1 ? String(imgSt1).trim() : undefined },
+                  { id: 'B', text: String(optB), isCorrect: keysArray.includes('B'), image: imgSt2 ? String(imgSt2).trim() : undefined },
+                  { id: 'C', text: String(optC), isCorrect: keysArray.includes('C'), image: imgSt3 ? String(imgSt3).trim() : undefined },
+                  { id: 'D', text: String(optD || '-'), isCorrect: keysArray.includes('D'), image: imgSt4 ? String(imgSt4).trim() : undefined },
+                  { id: 'E', text: String(optE || '-'), isCorrect: keysArray.includes('E'), image: imgSt5 ? String(imgSt5).trim() : undefined },
                 ],
               });
             }
@@ -9217,9 +9225,20 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       <tbody className="divide-y divide-slate-100 font-semibold text-slate-800">
                         {(previewQuestion.categoryStatements || []).map((st, idx) => (
                           <tr key={st.id || idx} className="hover:bg-slate-50 transition-colors">
-                            <td className="p-3 text-center font-bold text-slate-400">{idx + 1}</td>
-                            <td className="p-3 text-slate-900">{st.statement}</td>
-                            <td className="p-3 text-center">
+                            <td className="p-3 text-center font-bold text-slate-400 align-top">{idx + 1}</td>
+                            <td className="p-3 text-slate-900 align-top space-y-1.5">
+                              <div>{st.statement}</div>
+                              {st.image && (
+                                <div className="pt-1">
+                                  <img
+                                    src={st.image}
+                                    alt={`Gambar Pernyataan #${idx + 1}`}
+                                    className="max-h-32 w-auto object-contain rounded-xl border border-slate-200 bg-white p-1 shadow-2xs"
+                                  />
+                                </div>
+                              )}
+                            </td>
+                            <td className="p-3 text-center align-top">
                               <span className="inline-block bg-emerald-100 text-emerald-900 font-bold px-3 py-1 rounded-lg border border-emerald-300">
                                 ✓ {st.correctCategory}
                               </span>
