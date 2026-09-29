@@ -319,15 +319,8 @@ export default function App() {
     };
   };
 
-  // Firebase Synchronization Effect (Solusi A - Optimasi Kuota: Listener Realtime HANYA aktif untuk Guru/Admin)
+  // One-time initial fetch from Firebase on App Mount (Lightweight single-read for students and teachers)
   useEffect(() => {
-    // Siswa diset Write-Only (hanya kirim nilai akhir).
-    // Jangan buka listener atau query terus-menerus di perangkat siswa/halaman login agar kuota 50k reads tidak habis oleh 360 siswa.
-    if (viewState !== 'admin') {
-      return;
-    }
-
-    // Initial fetch from Firebase (Hanya dieksekusi saat Admin / Guru masuk)
     loadConfigFromFirebase().then((remoteConfig) => {
       if (remoteConfig && Array.isArray(remoteConfig.questions)) {
         const cleanedQuestions = remoteConfig.questions.filter((q) => !isLegacyDefaultQuestion(q));
@@ -338,23 +331,19 @@ export default function App() {
         setConfig((prev) => {
           const newConfig = {
             ...merged,
-            questions: cleanedQuestions,
+            questions: cleanedQuestions.length > 0 ? cleanedQuestions : prev.questions,
             teachers: (merged.teachers && merged.teachers.length > 0) ? merged.teachers : prev.teachers,
             students: (merged.students && merged.students.length > 0) ? merged.students : prev.students,
+            scheduleTokens: (merged.scheduleTokens && merged.scheduleTokens.length > 0) ? merged.scheduleTokens : prev.scheduleTokens,
           };
           try {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(newConfig));
           } catch (e) {}
-          // If remoteConfig still had legacy questions, sync the cleaned version to Firebase
-          if (remoteConfig.questions.some(isLegacyDefaultQuestion)) {
-            saveConfigToFirebase(newConfig).catch(() => {});
-          }
           return newConfig;
         });
       }
     }).catch(() => {});
 
-    // Fetch Teachers, Students, and Admins from Firebase for Admin/Teacher dashboard
     loadTeachersFromFirebase().then((remoteTeachers) => {
       if (remoteTeachers && remoteTeachers.length > 0) {
         setConfig((prev) => {
@@ -390,7 +379,15 @@ export default function App() {
         });
       }
     }).catch(() => {});
+  }, []);
 
+  // Firebase Realtime Synchronization (HANYA aktif untuk Guru/Admin saat memantau ujian)
+  useEffect(() => {
+    if (viewState !== 'admin') {
+      return;
+    }
+
+    // Refresh student results for Admin/Teacher dashboard
     loadStudentResultsFromFirebase().then((remoteResults) => {
       if (Array.isArray(remoteResults) && remoteResults.length > 0) {
         setStudentResults(remoteResults);
@@ -742,7 +739,7 @@ export default function App() {
     }
 
     // Filter active questions scoped to the student's assigned teacher/subject
-    const activePool = config.questions.filter((q) => {
+    let activePool = config.questions.filter((q) => {
       if (q.isActive === false) return false;
       if (studentInfo.kodeGuru && q.kodeGuru) {
         if (q.kodeGuru.toUpperCase() !== studentInfo.kodeGuru.toUpperCase()) {
@@ -751,8 +748,24 @@ export default function App() {
       }
       return true;
     });
+
+    // Fallback 1: Jika filter kodeGuru menghasilkan 0 soal, gunakan seluruh soal aktif yang ada di Bank Soal
     if (activePool.length === 0) {
-      showAlert('Tidak ada soal yang aktif/dipilih di Bank Soal! Silakan aktifkan soal terlebih dahulu di Panel Pengaturan.');
+      activePool = config.questions.filter((q) => q.isActive !== false);
+    }
+
+    // Fallback 2: Jika status isActive belum diset, gunakan seluruh bank soal yang ada
+    if (activePool.length === 0 && config.questions.length > 0) {
+      activePool = [...config.questions];
+    }
+
+    // Fallback 3: Jika bank soal kosong di perangkat, gunakan defaultQuestions sebagai cadangan
+    if (activePool.length === 0 && defaultQuestions && defaultQuestions.length > 0) {
+      activePool = defaultQuestions.filter((q) => q.isActive !== false);
+    }
+
+    if (activePool.length === 0) {
+      showAlert('Tidak ada soal yang aktif di Bank Soal! Silakan hubungi Guru Pengawas atau aktifkan soal di Panel Guru.');
       return;
     }
 

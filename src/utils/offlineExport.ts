@@ -338,30 +338,29 @@ export function exportOfflineAppHtml(config: AppConfig): void {
       <button id="btn-close-online-modal" class="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 rounded-full cursor-pointer font-extrabold text-sm">✕</button>
       <div class="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-4 text-amber-600 border border-amber-300 text-3xl font-bold">📡</div>
       <div class="text-center mb-4">
-        <span class="inline-block px-3 py-1 bg-amber-100 text-amber-800 font-bold text-xs rounded-full border border-amber-300 mb-2">⚠️ Peringatan Keamanan CBT</span>
-        <h3 class="text-xl font-extrabold text-slate-900">Terdeteksi Koneksi Online (Internet Aktif)</h3>
+        <span class="inline-block px-3 py-1 bg-blue-100 text-blue-800 font-bold text-xs rounded-full border border-blue-300 mb-2">🌐 Konfirmasi Jaringan CBT</span>
+        <h3 class="text-xl font-extrabold text-slate-900">Informasi Status Koneksi</h3>
       </div>
       <div class="space-y-3 mb-6">
-        <div class="p-4 bg-amber-50 rounded-2xl border-2 border-amber-300 text-amber-950 text-xs sm:text-sm font-semibold leading-relaxed">
-          <p class="font-bold text-amber-900 mb-1">⚠️ Pindahkan Mode Offline agar bisa mengerjakan CBT!</p>
-          Sistem mendeteksi bahwa perangkat Anda saat ini terhubung ke jaringan internet (Mode Online). Untuk mencegah kecurangan, browsing jawaban, dan pengalihan fokus saat ujian, Anda diwajibkan menggunakan Mode Offline.
+        <div class="p-4 bg-blue-50 rounded-2xl border border-blue-200 text-blue-950 text-xs sm:text-sm font-medium leading-relaxed">
+          <p class="font-bold text-blue-900 mb-1">💡 Ujian Siap Dimulai (Online / Offline Lab)</p>
+          Aplikasi CBT Mandiri ini dapat berjalan baik tanpa internet (Offline) maupun dengan jaringan lokal / Wi-Fi Lab Sekolah. Jika Anda sudah siap, klik tombol <b>Mulai Ujian Sekarang</b> di bawah.
         </div>
-        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-700">
-          <p class="font-bold text-slate-800 mb-1">Petunjuk Beralih ke Mode Offline:</p>
-          <ol class="list-decimal pl-4 space-y-0.5 text-slate-600">
-            <li>Matikan <b>Wi-Fi</b> atau <b>Data Seluler</b> di HP/Laptop.</li>
-            <li>Atau aktifkan <b>Mode Pesawat (Airplane Mode)</b>.</li>
-            <li>Status jaringan di bawah ini akan otomatis berubah menjadi Offline.</li>
+        <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900">
+          <p class="font-bold text-amber-950 mb-1">Petunjuk Tambahan Mode Offline Mandiri:</p>
+          <ol class="list-decimal pl-4 space-y-0.5 text-amber-800">
+            <li>Untuk ujian 100% tanpa internet, Anda dapat mematikan Wi-Fi atau mengaktifkan Mode Pesawat.</li>
+            <li>Status jaringan di bawah akan mendeteksi Offline secara otomatis.</li>
           </ol>
         </div>
-        <div id="online-status-badge" class="p-3 rounded-xl border font-bold text-xs flex items-center justify-between bg-red-50 text-red-700 border-red-200">
+        <div id="online-status-badge" class="p-3 rounded-xl border font-bold text-xs flex items-center justify-between bg-blue-50 text-blue-800 border-blue-200">
           <span>Status Jaringan Saat Ini:</span>
-          <span id="online-status-text" class="font-black uppercase tracking-wider">🔴 ONLINE</span>
+          <span id="online-status-text" class="font-black uppercase tracking-wider">🌐 ONLINE (Siap Ujian)</span>
         </div>
       </div>
       <div class="flex flex-col sm:flex-row gap-2">
-        <button id="btn-recheck-online" class="w-full sm:w-1/2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 px-4 rounded-2xl text-xs cursor-pointer">🔄 Cek Ulang Koneksi</button>
-        <button id="btn-proceed-online" class="w-full sm:w-1/2 bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-4 rounded-2xl text-xs cursor-pointer">Lanjutkan Mengerjakan ➔</button>
+        <button id="btn-recheck-online" class="w-full sm:w-1/3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 px-3 rounded-2xl text-xs cursor-pointer">🔄 Cek Koneksi</button>
+        <button id="btn-proceed-online" class="w-full sm:w-2/3 bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-3 px-4 rounded-2xl text-xs cursor-pointer shadow-md">Mulai Ujian Sekarang ➔</button>
       </div>
     </div>
   </div>

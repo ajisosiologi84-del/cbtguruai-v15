@@ -193,6 +193,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [allowReviewAfterFinish, setAllowReviewAfterFinish] = useState<boolean>(config.examSchedule?.allowReviewAfterFinish !== false);
   const [showScoreImmediately, setShowScoreImmediately] = useState<boolean>(config.examSchedule?.showScoreImmediately !== false);
   const [strictAntiCheating, setStrictAntiCheating] = useState<boolean>(config.examSchedule?.strictAntiCheating !== false);
+  const [requireOfflineMode, setRequireOfflineMode] = useState<boolean>(config.examSchedule?.requireOfflineMode === true);
   const [maxCheatingAllowed, setMaxCheatingAllowed] = useState<number>(config.examSchedule?.maxCheatingAllowed || 3);
   const [enableWarningAudio, setEnableWarningAudio] = useState<boolean>(config.enableWarningAudio !== false);
   const [customWarningAudioUrl, setCustomWarningAudioUrl] = useState<string>(config.customWarningAudioUrl || '');
@@ -594,6 +595,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         if (tConfig.examSchedule.allowReviewAfterFinish !== undefined) setAllowReviewAfterFinish(tConfig.examSchedule.allowReviewAfterFinish);
         if (tConfig.examSchedule.showScoreImmediately !== undefined) setShowScoreImmediately(tConfig.examSchedule.showScoreImmediately);
         if (tConfig.examSchedule.strictAntiCheating !== undefined) setStrictAntiCheating(tConfig.examSchedule.strictAntiCheating);
+        if (tConfig.examSchedule.requireOfflineMode !== undefined) setRequireOfflineMode(tConfig.examSchedule.requireOfflineMode);
         if (tConfig.examSchedule.maxCheatingAllowed !== undefined) setMaxCheatingAllowed(tConfig.examSchedule.maxCheatingAllowed);
       }
     } else if (config) {
@@ -616,6 +618,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         setAllowReviewAfterFinish(config.examSchedule.allowReviewAfterFinish !== false);
         setShowScoreImmediately(config.examSchedule.showScoreImmediately !== false);
         setStrictAntiCheating(config.examSchedule.strictAntiCheating !== false);
+        setRequireOfflineMode(config.examSchedule.requireOfflineMode === true);
         setMaxCheatingAllowed(config.examSchedule.maxCheatingAllowed || 3);
       }
     }
@@ -1139,6 +1142,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         allowReviewAfterFinish,
         showScoreImmediately,
         strictAntiCheating,
+        requireOfflineMode,
         maxCheatingAllowed,
       },
     };
@@ -7214,6 +7218,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       checked={strictAntiCheating}
                       onChange={(e) => setStrictAntiCheating(e.target.checked)}
                       className="w-5 h-5 rounded text-orange-600 focus:ring-orange-500 cursor-pointer"
+                    />
+                  </label>
+
+                  <label className="flex items-center justify-between p-3.5 bg-white rounded-xl border border-orange-200 cursor-pointer">
+                    <div>
+                      <span className="text-xs font-bold text-slate-800 block">Wajibkan Siswa Mode Offline</span>
+                      <span className="text-[10px] text-slate-500 font-medium">Jika diaktifkan, siswa wajib mematikan internet sebelum mengerjakan. Matikan untuk ujian online normal.</span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={requireOfflineMode}
+                      onChange={(e) => setRequireOfflineMode(e.target.checked)}
+                      className="w-5 h-5 rounded text-orange-600 focus:ring-orange-500 cursor-pointer shrink-0 ml-3"
                     />
                   </label>
                 </div>

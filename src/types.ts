@@ -120,6 +120,7 @@ export interface ExamScheduleConfig {
   showScoreImmediately?: boolean;
   strictAntiCheating?: boolean;
   maxCheatingAllowed?: number;
+  requireOfflineMode?: boolean; // Jika diaktifkan oleh Guru/Pengawas, siswa wajib beralih ke Mode Offline / Airplane mode
 }
 
 export interface TeacherConfigOverride {

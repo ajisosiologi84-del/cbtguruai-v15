@@ -38,24 +38,6 @@ export const PreTestView: React.FC<PreTestViewProps> = ({
     };
   }, []);
 
-  const executeStartExam = async () => {
-    // Directly request fullscreen on user click
-    await requestAppFullscreen();
-    onStartTest();
-  };
-
-  const handleStartButtonClick = () => {
-    if (isLimitReached || isSessionClosed || isSessionDraft) return;
-
-    if (navigator.onLine) {
-      setIsOnline(true);
-      setShowOnlineModal(true);
-    } else {
-      setIsOnline(false);
-      executeStartExam();
-    }
-  };
-
   const teacherConfig = studentInfo.kodeGuru ? config.teacherConfigs?.[studentInfo.kodeGuru] : undefined;
   const effectiveSchedule = teacherConfig?.examSchedule || config.examSchedule;
   const sessionStatus = effectiveSchedule?.sessionStatus || 'ACTIVE';
@@ -66,6 +48,24 @@ export const PreTestView: React.FC<PreTestViewProps> = ({
   const isSessionClosed = sessionStatus === 'CLOSED';
   const isSessionDraft = sessionStatus === 'DRAFT';
   const isStartDisabled = isLimitReached || isSessionClosed || isSessionDraft;
+
+  const executeStartExam = async () => {
+    // Directly request fullscreen on user click
+    await requestAppFullscreen();
+    onStartTest();
+  };
+
+  const handleStartButtonClick = () => {
+    if (isLimitReached || isSessionClosed || isSessionDraft) return;
+
+    // Hanya tampilkan modal peringatan offline jika Guru/Pengawas secara khusus mengaktifkan opsi Wajib Mode Offline
+    if (effectiveSchedule?.requireOfflineMode && navigator.onLine) {
+      setIsOnline(true);
+      setShowOnlineModal(true);
+    } else {
+      executeStartExam();
+    }
+  };
 
   return (
     <div className="flex-1 flex items-center justify-center bg-slate-100 fixed inset-0 z-40 p-3 sm:p-6 overflow-y-auto custom-scrollbar">
@@ -299,43 +299,44 @@ export const PreTestView: React.FC<PreTestViewProps> = ({
             </div>
 
             <div className="text-center mb-5">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-800 font-bold text-xs rounded-full border border-amber-300 mb-2">
-                <AlertTriangle className="w-3.5 h-3.5" /> Peringatan Keamanan CBT
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-100 text-blue-800 font-bold text-xs rounded-full border border-blue-300 mb-2">
+                <Wifi className="w-3.5 h-3.5" /> Konfirmasi Jaringan & Keamanan Ujian
               </span>
               <h3 className="text-xl font-extrabold text-slate-900">
-                Terdeteksi Koneksi Online (Internet Aktif)
+                Informasi Mode Pengerjaan Ujian
               </h3>
             </div>
 
             <div className="space-y-3 mb-6">
-              <div className="p-4 bg-amber-50 rounded-2xl border-2 border-amber-300 text-amber-950 text-xs sm:text-sm font-semibold leading-relaxed">
-                <p className="font-bold text-amber-900 mb-1 flex items-center gap-1.5">
-                  ⚠️ Pindahkan Mode Offline agar bisa mengerjakan CBT!
+              <div className="p-4 bg-blue-50 rounded-2xl border border-blue-200 text-blue-950 text-xs sm:text-sm font-medium leading-relaxed">
+                <p className="font-bold text-blue-900 mb-1 flex items-center gap-1.5">
+                  🌐 Mendukung Ujian Online & Offline
                 </p>
-                Sistem mendeteksi perangkat Anda terhubung ke internet. Untuk mencegah kecurangan, browsing jawaban, dan pengalihan fokus saat ujian, Anda sangat disarankan untuk mematikan koneksi internet.
+                Sistem CBT ini dapat dikerjakan secara <b>Online (akses web / cloud)</b> maupun <b>Offline (tanpa internet / Lab Komputer)</b>. Jika Anda sedang terhubung ke internet, Anda dapat langsung mengklik tombol <b>Mulai Ujian (Mode Online)</b> di bawah.
               </div>
 
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-700 space-y-1">
-                <p className="font-bold text-slate-800">Petunjuk Beralih ke Mode Offline:</p>
-                <ol className="list-decimal pl-4 space-y-0.5 text-slate-600">
-                  <li>Matikan <b>Wi-Fi</b> atau <b>Data Seluler</b> di HP / Laptop Anda.</li>
-                  <li>Atau aktifkan <b>Mode Pesawat (Airplane Mode)</b>.</li>
-                  <li>Aplikasi CBT akan otomatis mendeteksi status Offline Anda.</li>
+              <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900 space-y-1">
+                <p className="font-bold text-amber-950 flex items-center gap-1">
+                  <span>💡</span> Tips Jika Ingin Mode Offline (Hemat Kuota / Anti-Gangguan):
+                </p>
+                <ol className="list-decimal pl-4 space-y-0.5 text-amber-800">
+                  <li>Matikan <b>Wi-Fi</b> atau <b>Data Seluler</b> di perangkat Anda (atau aktifkan Mode Pesawat).</li>
+                  <li>Status jaringan di bawah akan otomatis mendeteksi Offline.</li>
                 </ol>
               </div>
 
               {/* Realtime Status Badge */}
               <div className={`p-3 rounded-xl border font-bold text-xs flex items-center justify-between ${
                 isOnline 
-                  ? 'bg-red-50 text-red-700 border-red-200' 
+                  ? 'bg-blue-50 text-blue-800 border-blue-200' 
                   : 'bg-emerald-50 text-emerald-700 border-emerald-200'
               }`}>
                 <span className="flex items-center gap-2">
-                  {isOnline ? <Wifi className="w-4 h-4 text-red-500" /> : <WifiOff className="w-4 h-4 text-emerald-600" />}
+                  {isOnline ? <Wifi className="w-4 h-4 text-blue-600" /> : <WifiOff className="w-4 h-4 text-emerald-600" />}
                   Status Jaringan Saat Ini:
                 </span>
                 <span className="font-black uppercase tracking-wider">
-                  {isOnline ? '🔴 ONLINE' : '🟢 OFFLINE (Aman)'}
+                  {isOnline ? '🌐 ONLINE (Siap Ujian Web)' : '🟢 OFFLINE (Aman Mandiri)'}
                 </span>
               </div>
             </div>
@@ -355,18 +356,18 @@ export const PreTestView: React.FC<PreTestViewProps> = ({
                 <>
                   <button
                     onClick={() => setIsOnline(navigator.onLine)}
-                    className="w-full sm:w-1/2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3.5 px-4 rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                    className="w-full sm:w-1/3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3.5 px-3 rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                   >
-                    <RefreshCw className="w-4 h-4" /> Cek Koneksi Lagi
+                    <RefreshCw className="w-4 h-4" /> Cek Jaringan
                   </button>
                   <button
                     onClick={() => {
                       setShowOnlineModal(false);
                       executeStartExam();
                     }}
-                    className="w-full sm:w-1/2 bg-amber-600 hover:bg-amber-700 text-white font-bold py-3.5 px-4 rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95"
+                    className="w-full sm:w-2/3 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-extrabold py-3.5 px-5 rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 shadow-lg"
                   >
-                    <span>Lanjutkan Ujian</span> <ArrowRight className="w-4 h-4" />
+                    <span>Mulai Ujian Sekarang (Mode Online)</span> <ArrowRight className="w-4 h-4" />
                   </button>
                 </>
               )}
